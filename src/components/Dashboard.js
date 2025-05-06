@@ -81,7 +81,7 @@ function Dashboard() {
   const fetchDashboardData = useCallback(async () => {
     if (!email) return;
     try {
-      const inventoryRes = await axios.get('https://medicine-inventory-management-backend.onrender.com/api/inventory', {
+      const inventoryRes = await axios.get('http://localhost:3000/api/inventory', {
         params: { email }
       });
       const inventoryData = inventoryRes.data;
@@ -112,7 +112,7 @@ function Dashboard() {
       const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
       const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-      const response = await axios.get('https://medicine-inventory-management-backend.onrender.com/api/bills/medicine-sales', {
+      const response = await axios.get('http://localhost:3000/api/bills/medicine-sales', {
         params: {
           email,
           startDate: startDate.toISOString().split('T')[0],
