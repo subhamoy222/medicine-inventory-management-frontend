@@ -30,7 +30,7 @@ axiosInstance.interceptors.request.use(
       if (userStr) {
         const user = JSON.parse(userStr);
         if (user?.email && !config.params.email) {
-          config.params.email = user.email;
+          config.params.email = user.email.toLowerCase();
         }
       }
     } catch (error) {
