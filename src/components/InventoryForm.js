@@ -461,7 +461,7 @@
 
 
 import React, { useEffect, useState, useMemo } from 'react';
-import axios from 'axios';
+import axiosInstance from 'axios';
 // Make sure you have lucide-react installed: npm install lucide-react
 import { SearchIcon, RefreshCw, AlertCircle, Package, Calendar, User, Info } from 'lucide-react';
 
