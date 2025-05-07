@@ -1,188 +1,133 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../utils/axios';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 const Login = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
   });
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     setError('');
-    setIsLoading(true);
-
-    // Clear any existing tokens
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('email');
-    localStorage.removeItem('authToken');
 
     try {
-      // Try direct API call first with fetch API as a fallback
-      try {
-        console.log('Attempting login with axiosInstance...');
-        const response = await axiosInstance.post('/api/users/login', formData);
-        
-        handleSuccessfulLogin(response.data);
-      } catch (axiosError) {
-        // If axios fails with timeout, try native fetch as backup
-        if (axiosError.code === 'ECONNABORTED') {
-          console.log('Axios timeout, trying fetch API as fallback...');
-          
-          const apiUrl = process.env.REACT_APP_API_URL || 'https://medicine-inventory-management-backend.onrender.com';
-          const fetchResponse = await fetch(`${apiUrl}/api/users/login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData)
-          });
-          
-          if (!fetchResponse.ok) {
-            const errorData = await fetchResponse.json();
-            throw new Error(errorData.message || `Server responded with ${fetchResponse.status}`);
-          }
-          
-          const data = await fetchResponse.json();
-          handleSuccessfulLogin(data);
-        } else {
-          // Re-throw if it's not a timeout error
-          throw axiosError;
-        }
-      }
-    } catch (error) {
-      console.error('Login error details:', error);
-      
-      // Improved error message handling
-      let errorMessage = 'Login failed. Please try again.';
-      
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      } else if (error.code === 'ECONNABORTED') {
-        errorMessage = 'Connection timed out. The server might be slow or down.';
-      } else if (!navigator.onLine) {
-        errorMessage = 'You appear to be offline. Please check your internet connection.';
-      }
-      
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      const response = await axiosInstance.post('/api/users/login', formData);
 
-  // Helper function to handle successful login
-  const handleSuccessfulLogin = (data) => {
-    if (data?.token) {
-      // Store token in both formats for compatibility
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('authToken', data.token);
-      
-      // Store email separately (lowercase for consistency)
-      const emailToStore = formData.email.toLowerCase();
-      localStorage.setItem('email', emailToStore);
-      
-      // Store user data if it exists
-      if (data.user) {
+      if (response.data && response.data.token) {
+        // Store token
+        localStorage.setItem('token', response.data.token);
+        
+        // Store user data with email in lowercase
         const userData = {
-          ...data.user,
-          email: data.user.email?.toLowerCase() || emailToStore
+          ...(response.data.user || {}),
+          email: formData.email.toLowerCase()
         };
-        localStorage.setItem('user', JSON.stringify(userData));
+        
+        try {
+          localStorage.setItem('user', JSON.stringify(userData));
+        } catch (storageError) {
+          console.error('Error storing user data:', storageError);
+          toast.error('Error saving user data. Please try again.');
+          return;
+        }
+        
+        // Show success toast
+        toast.success('Login successful!', {
+          duration: 2000,
+          position: 'top-center',
+          style: {
+            background: '#10B981',
+            color: '#fff',
+            padding: '16px',
+            borderRadius: '8px',
+          },
+        });
+
+        // Navigate to dashboard
+        navigate('/dashboard');
       } else {
-        // Create minimal user object if server doesn't provide one
-        localStorage.setItem('user', JSON.stringify({
-          email: emailToStore
-        }));
+        throw new Error('Invalid response from server');
       }
-      
-      toast.success('Login successful!');
-      navigate('/dashboard');
-    } else {
-      throw new Error('Invalid response: Missing token');
+    } catch (err) {
+      console.error('Login error:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Login failed. Please check your credentials.';
+      setError(errorMessage);
+      toast.error(errorMessage, {
+        duration: 4000,
+        position: 'top-center',
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+          padding: '16px',
+          borderRadius: '8px',
+        },
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Enter your credentials to access your account
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">Email address</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+        <h2 className="text-3xl font-bold text-indigo-600 mb-6 text-center">Login</h2>
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg animate-shake">
+            {error}
           </div>
-
-          {error && (
-            <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded-md">
-              {error}
-            </div>
-          )}
-
+        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              {isLoading ? (
-                <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </span>
-              ) : null}
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </button>
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full rounded-lg border-2 border-indigo-100 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 p-3 transition-colors"
+            />
           </div>
+          <div>
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="w-full rounded-lg border-2 border-indigo-100 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 p-3 transition-colors"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors disabled:bg-gray-400 flex items-center justify-center"
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Logging in...
+              </>
+            ) : (
+              'Login'
+            )}
+          </button>
         </form>
       </div>
     </div>
@@ -190,3 +135,4 @@ const Login = () => {
 };
 
 export default Login;
+

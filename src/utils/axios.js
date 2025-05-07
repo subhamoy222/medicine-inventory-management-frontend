@@ -1,85 +1,61 @@
-// utils/axios.js
 import axios from 'axios';
 
-// Create a customized axios instance
+const baseURL = 'https://medicine-inventory-management-backend.onrender.com';
+
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://medicine-inventory-management-backend.onrender.com',
-  timeout: 60000, // Increased timeout to 60 seconds
+  baseURL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
-  }
+    'Accept': 'application/json',
+  },
 });
 
-// Request interceptor for adding the auth token
+// Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Try to get token from multiple possible storage keys for compatibility
-    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-    
+    const token = localStorage.getItem('token');
     if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    // Log request being made (helpful for debugging)
-    console.log(`Making request to: ${config.url}`);
-    
+    // Add email to query params if not present
+    if (!config.params) {
+      config.params = {};
+    }
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.email && !config.params.email) {
+          config.params.email = user.email;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+    }
     return config;
   },
   (error) => {
-    console.error('Request error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor for error handling
+// Response interceptor
 axiosInstance.interceptors.response.use(
-  (response) => {
-    // Optional: Log successful responses
-    // console.log('Response:', response.data);
-    return response;
-  },
+  (response) => response,
   async (error) => {
-    // Enhanced error logging
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('Error response:', {
-        data: error.response.data,
-        status: error.response.status,
-        headers: error.response.headers
-      });
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('Error request:', error.request);
-      console.error('Error config:', error.config);
+    if (error.response?.status === 401) {
+      // Clear local storage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       
-      // Specific handling for timeout errors
-      if (error.code === 'ECONNABORTED') {
-        console.error('Request timed out. Please check your internet connection or the server might be down.');
-      }
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error('Error message:', error.message);
-    }
-    
-    // Handle 401 Unauthorized errors
-    if (error.response?.status === 401 && !error.config._retry) {
-      error.config._retry = true;
-      
-      // Redirect to login for unauthorized requests
-      if (window.location.pathname !== '/login') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-        localStorage.removeItem('email');
-        
-        // Use a more reliable way to navigate
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login';
       }
     }
-    
     return Promise.reject(error);
   }
 );
 
-export default axiosInstance;
+export default axiosInstance; 
