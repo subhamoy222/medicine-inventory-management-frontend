@@ -551,6 +551,45 @@ const handleItemChange = (index, event) => {
     doc.save(`SalesInvoice_${invoiceNumber}.pdf`);
   };
 
+  // New function to update inventory quantities after a sale
+  const updateInventoryQuantities = async (soldItems) => {
+    const token = localStorage.getItem("token");
+    const email = localStorage.getItem("email");
+    
+    try {
+      // Create an array of inventory updates
+      const updates = soldItems.map(item => ({
+        email,
+        itemName: item.itemName,
+        batch: item.batch,
+        quantity: -Number(item.quantity) // Negative value to reduce inventory
+      }));
+      
+      // Make the API call to update inventory
+      const response = await fetch("https://medicine-inventory-management-backend.onrender.com/api/inventory/update-batch-quantities", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ updates }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update inventory");
+      }
+      
+      console.log("Inventory updated successfully:", data);
+      return true;
+    } catch (error) {
+      console.error("Error updating inventory:", error);
+      setMessage({ type: 'error', text: `Error updating inventory: ${error.message}` });
+      return false;
+    }
+  };
+
   const createSellBill = async () => {
     const token = localStorage.getItem("token");
     const email = localStorage.getItem("email");
@@ -621,10 +660,17 @@ const handleItemChange = (index, event) => {
       const responseData = await response.json();
 
       if (response.ok) {
-        setMessage({ type: 'success', text: "Invoice created successfully!" });
-        generatePDF();
-        resetItems();
-        resetForm();
+        // Update inventory quantities after successful bill creation
+        const inventoryUpdated = await updateInventoryQuantities(items);
+        
+        if (inventoryUpdated) {
+          setMessage({ type: 'success', text: "Invoice created and inventory updated successfully!" });
+          generatePDF();
+          resetItems();
+          resetForm();
+        } else {
+          setMessage({ type: 'error', text: "Invoice created but failed to update inventory" });
+        }
       } else {
         setMessage({ type: 'error', text: responseData.message || "Failed to create invoice" });
       }
