@@ -3,18 +3,13 @@
   "builds": [
     {
       "src": "package.json",
-      "use": "@vercel/node"
+      "use": "@vercel/static-build",
+      "config": { "distDir": "build" }
     }
   ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
-  "env": {
-    "REACT_APP_API_URL": "https://medicine-inventory-management-backend.onrender.com"
-  },
   "headers": [
     {
       "source": "/(.*)",
@@ -33,5 +28,8 @@
         }
       ]
     }
-  ]
+  ],
+  "env": {
+    "REACT_APP_API_URL": "https://medicine-inventory-management-backend.onrender.com"
+  }
 }
