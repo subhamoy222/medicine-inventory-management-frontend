@@ -18,21 +18,26 @@ axiosInstance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Add email to query params if not present
+
+    // Initialize params if not present
     if (!config.params) {
       config.params = {};
     }
+
+    // Safely get user email from localStorage
     try {
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
-        if (user.email && !config.params.email) {
+        if (user?.email && !config.params.email) {
           config.params.email = user.email;
         }
       }
     } catch (error) {
-      console.error('Error parsing user data:', error);
+      console.warn('Error parsing user data:', error);
+      // Don't throw error, just continue without user email
     }
+
     return config;
   },
   (error) => {
