@@ -35,7 +35,6 @@ axiosInstance.interceptors.request.use(
       }
     } catch (error) {
       console.warn('Error parsing user data:', error);
-      // Don't throw error, just continue without user email
     }
 
     return config;

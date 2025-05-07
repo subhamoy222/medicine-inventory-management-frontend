@@ -25,6 +25,10 @@ const Login = () => {
     setIsLoading(true);
 
     try {
+      // Clear any existing tokens
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+
       const response = await axiosInstance.post('/api/users/login', formData);
       
       if (response.data?.token) {
@@ -41,7 +45,6 @@ const Login = () => {
           localStorage.setItem('user', JSON.stringify(userData));
         } catch (storageError) {
           console.warn('Error storing user data:', storageError);
-          // Continue even if user data storage fails
         }
 
         toast.success('Login successful!');
