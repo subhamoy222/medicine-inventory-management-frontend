@@ -13,7 +13,7 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     // Only create socket if it doesn't exist
     if (!socket) {
-      const newSocket = io(process.env.REACT_APP_API_URL || 'http://localhost:3000', {
+      const newSocket = io(process.env.REACT_APP_API_URL || 'https://medicine-inventory-management-backend.onrender.com', {
         withCredentials: true,
         reconnection: true,
         reconnectionAttempts: 5,

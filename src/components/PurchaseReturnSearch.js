@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'https://medicine-inventory-management-backend.onrender.com';
 
 const PurchaseReturnSearch = () => {
   const [email, setEmail] = useState('');

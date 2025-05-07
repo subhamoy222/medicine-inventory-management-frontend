@@ -20,7 +20,7 @@ export const initializeSocket = (userData) => {
     return;
   }
 
-  socket = io(process.env.REACT_APP_API_URL || 'http://localhost:3000', {
+  socket = io(process.env.REACT_APP_API_URL || 'https://medicine-inventory-management-backend.onrender.com', {
     withCredentials: true
   });
 

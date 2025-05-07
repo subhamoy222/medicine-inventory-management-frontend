@@ -150,7 +150,7 @@ const Register = () => {
     }
 
     try {
-      const response = await axios.post('https://medicine-inventory-system.onrender.com/api/users/register', formData);
+      const response = await axios.post('https://medicine-inventory-management-backend.onrender.com/api/users/register', formData);
       setSuccess(response.data.message);
       setFormData({ name: '', email: '', password: '', confirmPassword: '', gstNo: '' }); // Reset form
     } catch (err) {

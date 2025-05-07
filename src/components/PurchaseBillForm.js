@@ -236,7 +236,7 @@ const PurchaseBillForm = () => {
     };
 
     try {
-      const response = await fetch("http://localhost:3000/api/bills/purchase", {
+      const response = await fetch("https://medicine-inventory-management-backend.onrender.com/api/bills/purchase", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
