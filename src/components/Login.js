@@ -25,16 +25,23 @@ const Login = () => {
     try {
       const response = await axiosInstance.post('/api/users/login', formData);
 
-      if (response.data) {
+      if (response.data && response.data.token) {
         // Store token
         localStorage.setItem('token', response.data.token);
         
         // Store user data with email in lowercase
         const userData = {
-          ...response.data.user,
+          ...(response.data.user || {}),
           email: formData.email.toLowerCase()
         };
-        localStorage.setItem('user', JSON.stringify(userData));
+        
+        try {
+          localStorage.setItem('user', JSON.stringify(userData));
+        } catch (storageError) {
+          console.error('Error storing user data:', storageError);
+          toast.error('Error saving user data. Please try again.');
+          return;
+        }
         
         // Show success toast
         toast.success('Login successful!', {
@@ -50,9 +57,12 @@ const Login = () => {
 
         // Navigate to dashboard
         navigate('/dashboard');
+      } else {
+        throw new Error('Invalid response from server');
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Login failed. Please check your credentials.';
+      console.error('Login error:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Login failed. Please check your credentials.';
       setError(errorMessage);
       toast.error(errorMessage, {
         duration: 4000,
@@ -64,7 +74,6 @@ const Login = () => {
           borderRadius: '8px',
         },
       });
-      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }

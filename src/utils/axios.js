@@ -22,9 +22,16 @@ axiosInstance.interceptors.request.use(
     if (!config.params) {
       config.params = {};
     }
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.email && !config.params.email) {
-      config.params.email = user.email;
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.email && !config.params.email) {
+          config.params.email = user.email;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error);
     }
     return config;
   },
