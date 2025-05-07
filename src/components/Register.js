@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import axiosInstance from '../utils/axios';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ const Register = () => {
     }
 
     try {
-      const response = await axios.post('https://medicine-inventory-management-backend.onrender.com/api/users/register', formData);
+      const response = await axiosInstance.post('https://medicine-inventory-management-backend.onrender.com/api/users/register', formData);
       setFormData({ name: '', email: '', password: '', confirmPassword: '', gstNo: '' }); // Reset form
       setVerificationStep(true);
       

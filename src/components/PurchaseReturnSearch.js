@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
+import axiosInstance from '../utils/axios';
 
 const API_BASE_URL = 'https://medicine-inventory-management-backend.onrender.com';
 
@@ -25,7 +26,7 @@ const PurchaseReturnSearch = () => {
     setError('');
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/purchase-returns/returnable-quantities`, {
+      const response = await axiosInstance.get(`${API_BASE_URL}/api/purchase-returns/returnable-quantities`, {
         params: { email, supplierName }
       });
 

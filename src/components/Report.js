@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import axiosInstance from '../utils/axios';
 
 function MedicineSalesSummary() {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ function MedicineSalesSummary() {
       console.log('Fetching sales data with params:', params);
       console.log('Token present:', !!token);
       
-      const response = await axios.get('https://medicine-inventory-management-backend.onrender.com/api/bills/medicine-sales', {
+      const response = await axiosInstance.get('https://medicine-inventory-management-backend.onrender.com/api/bills/medicine-sales', {
         params,
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -332,7 +333,7 @@ function MedicineSalesSummary() {
 
     const fetchAvailableMedicines = async () => {
       try {
-        const response = await axios.get('https://medicine-inventory-management-backend.onrender.com/api/inventory', {
+        const response = await axiosInstance.get('https://medicine-inventory-management-backend.onrender.com/api/inventory', {
           params: { email },
           headers: {
             'Authorization': `Bearer ${token}`,

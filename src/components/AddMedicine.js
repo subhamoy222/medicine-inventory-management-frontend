@@ -29,7 +29,7 @@ const AddMedicine = () => {
             const token = localStorage.getItem('token');
             const email = localStorage.getItem('email');
 
-            const response = await axios.post('https://medicine-inventory-management-backend.onrender.com/api/inventory', {
+            const response =await axiosInstance.post('https://medicine-inventory-management-backend.onrender.com/api/inventory', {
                 ...formData,
                 email
             }, {

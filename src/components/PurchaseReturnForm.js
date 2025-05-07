@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import axiosInstance from '../utils/axios';
 
 const API_BASE_URL = 'https://medicine-inventory-management-backend.onrender.com';
 
@@ -52,7 +53,7 @@ const PurchaseReturnForm = () => {
 
   // Add request interceptor for authentication
   useEffect(() => {
-    const interceptor = axios.interceptors.request.use(config => {
+    const interceptor = axiosInstance.interceptors.request.use(config => {
       const token = localStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -60,7 +61,7 @@ const PurchaseReturnForm = () => {
       return config;
     });
 
-    return () => axios.interceptors.request.eject(interceptor);
+    return () => axiosInstance.interceptors.request.eject(interceptor);
   }, []);
 
   // Fetch suppliers on component mount
@@ -114,7 +115,7 @@ const PurchaseReturnForm = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await axios.get(`${API_BASE_URL}/api/purchase-returns/returnable-quantities`, {
+      const response = await axiosInstance.get(`${API_BASE_URL}/api/purchase-returns/returnable-quantities`, {
         params: {
           email: formData.email,
           supplierName: formData.supplierName
@@ -329,7 +330,7 @@ const PurchaseReturnForm = () => {
         setLoading(true);
         setError('');
 
-        const response = await axios.post(`${API_BASE_URL}/api/purchase-returns/create`, {
+        const response = await axiosInstance.post(`${API_BASE_URL}/api/purchase-returns/create`, {
             ...formData,
             date: formData.date
         });
@@ -366,7 +367,7 @@ const PurchaseReturnForm = () => {
             // Download PDF
             if (response.data.pdfUrl) {
                 try {
-                    const pdfResponse = await axios.get(
+                    const pdfResponse = await axiosInstance.get(
                         `${API_BASE_URL}/api/purchase-returns${response.data.pdfUrl}`,
                         { responseType: 'blob' }
                     );
@@ -411,7 +412,7 @@ const PurchaseReturnForm = () => {
         email: formData.email
       };
 
-      const response = await axios.post(`${API_BASE_URL}/api/inventory`, testItem, {
+      const response = await axiosInstance.post(`${API_BASE_URL}/api/inventory`, testItem, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }

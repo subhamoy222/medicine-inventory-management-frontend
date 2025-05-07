@@ -3,11 +3,12 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import axiosInstance from '../utils/axios';
 
 const API_BASE_URL = 'https://medicine-inventory-management-backend.onrender.com';
 
 // Set up axios auth interceptor
-axios.interceptors.request.use(
+axiosInstance.interceptors.request.use(
   config => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -21,7 +22,7 @@ axios.interceptors.request.use(
 );
 
 // Handle authentication errors globally
-axios.interceptors.response.use(
+axiosInstance.interceptors.response.use(
   response => response,
   error => {
     if (error.response && error.response.status === 401) {

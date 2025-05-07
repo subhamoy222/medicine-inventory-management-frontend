@@ -27,7 +27,7 @@ const PurchaseReturnSearch = () => {
     setError('');
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/purchase-returns/returnable-quantities`, {
+      const response = await axiosInstance.get(`${API_BASE_URL}/api/purchase-returns/returnable-quantities`, {
         params: { email, supplierName }
       });
 

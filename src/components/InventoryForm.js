@@ -489,7 +489,7 @@ const Inventory = () => {
       }
 
       console.log(`[Frontend] Fetching inventory for email: ${email}`);
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         // Ensure this URL is correct and points to your getInventory endpoint
         `https://medicine-inventory-management-backend.onrender.com/api/inventory?email=${encodeURIComponent(email)}`,
         {

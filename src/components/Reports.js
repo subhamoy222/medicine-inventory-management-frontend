@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../utils/axios';
 
 // Create axios instance with interceptors
-const api = axios.create({
+const api = axiosInstance.create({
   baseURL: 'https://medicine-inventory-management-backend.onrender.com/api/bills/medicine-sales'
 });
 

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom'; // Import for redirection
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import axiosInstance from '../utils/axios';
 
 const SaleReturnForm = () => {
   const navigate = useNavigate();
@@ -84,7 +85,7 @@ const SaleReturnForm = () => {
       const token = localStorage.getItem('token');
       
       // Get returnable quantities from the new endpoint
-      const response = await axios.get('https://medicine-inventory-management-backend.onrender.com/api/bills/returnable-quantities', {
+      const response = await axiosInstance.get('https://medicine-inventory-management-backend.onrender.com/api/bills/returnable-quantities', {
         params: {
           email: formData.email,
           partyName: formData.customerName
@@ -393,7 +394,7 @@ const SaleReturnForm = () => {
       }
 
       // If all validations pass, submit the form
-      const response = await axios.post('https://medicine-inventory-management-backend.onrender.com/api/bills/return', formData, {
+      const response = await axiosInstance.post('https://medicine-inventory-management-backend.onrender.com/api/bills/return', formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

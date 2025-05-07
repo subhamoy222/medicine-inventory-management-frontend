@@ -77,7 +77,7 @@ const Alerts = () => {
         await new Promise(resolve => setTimeout(resolve, 1500));
 
         // Get inventory data for alerts
-        const response = await axios.get(`https://medicine-inventory-management-backend.onrender.com/api/inventory/${email}`);
+        const response = await axiosInstance.get(`https://medicine-inventory-management-backend.onrender.com/api/inventory/${email}`);
         const inventoryData = response.data;
 
         const currentDate = new Date();

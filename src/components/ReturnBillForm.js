@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import axiosInstance from '../utils/axios';
 
 const ReturnBillForm = () => {
   const [formData, setFormData] = useState({
@@ -47,7 +48,7 @@ const ReturnBillForm = () => {
       if (!formData.email) return;
       
       try {
-        const response = await axios.get('/api/customers', {
+        const response = await axiosInstance.get('/api/customers', {
           params: { email: formData.email }
         });
         setCustomers(response.data);
@@ -68,7 +69,7 @@ const ReturnBillForm = () => {
       
       try {
         setLoading(true);
-        const response = await axios.get(`/api/salebills`, {
+        const response = await axiosInstance.get(`/api/salebills`, {
           params: {
             email: formData.email,
             partyName: formData.customerName
@@ -103,7 +104,7 @@ const ReturnBillForm = () => {
 
     try {
       setLoading(true);
-      const response = await axios.get(`/api/salebills/${value}`);
+      const response = await axiosInstance.get(`/api/salebills/${value}`);
       const bill = response.data;
       
       setFormData({
@@ -132,7 +133,7 @@ const ReturnBillForm = () => {
 
   const fetchReturnableQuantities = async (items) => {
     try {
-      const response = await axios.post('/api/returnable-quantities', {
+      const response = await axiosInstance.post('/api/returnable-quantities', {
         email: formData.email,
         customerName: formData.customerName,
         items: items.map(item => ({
@@ -299,7 +300,7 @@ const ReturnBillForm = () => {
         }))
       };
       
-      const response = await axios.post('/api/return-bills', returnBillData);
+      const response = await axiosInstance.post('/api/return-bills', returnBillData);
       setSuccess('Return bill created successfully!');
       setError('');
       
