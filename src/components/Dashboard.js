@@ -73,10 +73,34 @@ function Dashboard() {
   }, []);
 
   const fetchUserEmail = useCallback(() => {
-    const storedEmail = localStorage.getItem("email");
-    setEmail(storedEmail || "Guest");
-    return storedEmail;
+    // Try multiple sources for email
+    let userEmail = null;
+    
+    // First, try to get email directly from localStorage
+    userEmail = localStorage.getItem("email");
+    
+    // If not found, try to extract from user object
+    if (!userEmail) {
+      const userJson = localStorage.getItem("user");
+      if (userJson) {
+        try {
+          const userData = JSON.parse(userJson);
+          userEmail = userData.email;
+        } catch (e) {
+          console.error("Error parsing user data:", e);
+        }
+      }
+    }
+    
+    // If still not found, use a default value
+    const emailToUse = userEmail || "Guest";
+    setEmail(emailToUse);
+    
+    // Only return actual email, not "Guest"
+    return userEmail;
   }, []);
+  
+
 
   const fetchDashboardData = useCallback(async () => {
     if (!email) return;
@@ -169,14 +193,21 @@ function Dashboard() {
   }, [email]);
 
   // Set up axios default headers for JWT
-  useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    } else {
-      delete axios.defaults.headers.common["Authorization"];
-    }
-  }, []);
+    // And replace the useEffect that sets up axios headers
+    useEffect(() => {
+      // Try multiple token sources for backward compatibility
+      const token = localStorage.getItem("authToken") || localStorage.getItem("token");
+      if (token) {
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      } else {
+        delete axios.defaults.headers.common["Authorization"];
+    
+        // If no token and not on login page, redirect to login
+        if (window.location.pathname !== '/login') {
+          navigate("/login");
+        }
+      }
+    }, [navigate]);
 
   // Socket event handlers
   useEffect(() => {

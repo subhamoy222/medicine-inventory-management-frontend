@@ -28,19 +28,33 @@ const Login = () => {
       // Clear any existing tokens
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('email');
+      localStorage.removeItem('authToken');
 
       const response = await axiosInstance.post('/api/users/login', formData);
       
       if (response.data?.token) {
-        // Store token
+        // Store token in both formats for compatibility
         localStorage.setItem('token', response.data.token);
+        localStorage.setItem('authToken', response.data.token);
         
-        // Store user data with lowercase email
-        const userData = {
-          ...response.data.user,
-          email: response.data.user.email.toLowerCase()
-        };
-        localStorage.setItem('user', JSON.stringify(userData));
+        // Store email separately (lowercase for consistency)
+        const emailToStore = formData.email.toLowerCase();
+        localStorage.setItem('email', emailToStore);
+        
+        // Store user data only if it exists
+        if (response.data.user) {
+          const userData = {
+            ...response.data.user,
+            email: response.data.user.email?.toLowerCase() || emailToStore
+          };
+          localStorage.setItem('user', JSON.stringify(userData));
+        } else {
+          // Create minimal user object if server doesn't provide one
+          localStorage.setItem('user', JSON.stringify({
+            email: emailToStore
+          }));
+        }
         
         toast.success('Login successful!');
         navigate('/dashboard');
@@ -124,4 +138,3 @@ const Login = () => {
 };
 
 export default Login;
-

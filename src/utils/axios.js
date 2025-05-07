@@ -1,42 +1,24 @@
+// utils/axios.js
 import axios from 'axios';
 
-const baseURL = 'https://medicine-inventory-management-backend.onrender.com';
-
+// Create a customized axios instance
 const axiosInstance = axios.create({
-  baseURL,
-  withCredentials: true,
+  baseURL: process.env.REACT_APP_API_URL || 'https://medicine-inventory-management-backend.onrender.com',
+  timeout: 15000, // 15 seconds timeout
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  },
+  }
 });
 
-// Request interceptor
+// Request interceptor for adding the auth token
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    // Try to get token from multiple possible storage keys for compatibility
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
-
-    // Initialize params if not present
-    if (!config.params) {
-      config.params = {};
-    }
-
-    // Safely get user email from localStorage
-    try {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        if (user?.email && !config.params.email) {
-          config.params.email = user.email.toLowerCase();
-        }
-      }
-    } catch (error) {
-      console.warn('Error parsing user data:', error);
-    }
-
     return config;
   },
   (error) => {
@@ -44,22 +26,33 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Response interceptor
+// Response interceptor for error handling
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   async (error) => {
-    if (error.response?.status === 401) {
-      // Clear local storage
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+    const originalRequest = error.config;
+    
+    // Handle 401 Unauthorized errors
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
       
-      // Only redirect if not already on login page
-      if (!window.location.pathname.includes('/login')) {
+      // Option 1: Redirect to login
+      if (window.location.pathname !== '/login') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('email');
+        
+        // Use a more reliable way to navigate
         window.location.href = '/login';
+        return Promise.reject(error);
       }
     }
+    
     return Promise.reject(error);
   }
 );
 
-export default axiosInstance; 
+export default axiosInstance;
