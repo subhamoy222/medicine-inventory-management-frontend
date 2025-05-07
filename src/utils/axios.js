@@ -4,7 +4,7 @@ const baseURL = 'https://medicine-inventory-management-backend.onrender.com';
 
 const axiosInstance = axios.create({
   baseURL,
-  withCredentials: true,
+  
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
