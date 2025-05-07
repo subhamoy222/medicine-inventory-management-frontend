@@ -23,7 +23,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3000/api/users/login",
+        "https://medicine-inventory-management-backend.onrender.com/api/users/login",
         formData
       );
 
