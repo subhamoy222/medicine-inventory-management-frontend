@@ -7,6 +7,7 @@ const axiosInstance = axios.create({
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
 });
 
@@ -16,6 +17,14 @@ axiosInstance.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Add email to query params if not present
+    if (!config.params) {
+      config.params = {};
+    }
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.email && !config.params.email) {
+      config.params.email = user.email;
     }
     return config;
   },
@@ -29,10 +38,14 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Clear local storage and redirect to login
+      // Clear local storage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

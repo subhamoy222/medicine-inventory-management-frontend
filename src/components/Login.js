@@ -25,10 +25,16 @@ const Login = () => {
     try {
       const response = await axiosInstance.post('/api/users/login', formData);
 
-      if (response.status === 200) {
-        // Store token and user data
+      if (response.data) {
+        // Store token
         localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        // Store user data with email in lowercase
+        const userData = {
+          ...response.data.user,
+          email: formData.email.toLowerCase()
+        };
+        localStorage.setItem('user', JSON.stringify(userData));
         
         // Show success toast
         toast.success('Login successful!', {
