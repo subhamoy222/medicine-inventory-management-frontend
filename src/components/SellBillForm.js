@@ -123,6 +123,23 @@ const SellBillForm = () => {
         console.log('Fetching next invoice number with token:', token);
         console.log('User email:', email);
         
+        if (!token || !email) {
+          console.error('Missing token or email in localStorage');
+          setMessage('Authentication information missing. Please log in again.');
+          
+          // Set default invoice number if authentication fails
+          setSellDetails(prev => ({
+            ...prev,
+            saleInvoiceNumber: "INV001",
+            date: new Date().toISOString().split("T")[0],
+            receiptNumber: "",
+            partyName: "",
+            email: "",
+            gstNumber: "",
+          }));
+          return;
+        }
+        
         const response = await fetch('https://medicine-inventory-management-backend.onrender.com/api/bills/next-invoice-number', {
           method: 'POST',
           headers: {
@@ -131,27 +148,31 @@ const SellBillForm = () => {
           },
           body: JSON.stringify({ email })
         });
-
+  
         console.log('Response status:', response.status);
         const data = await response.json();
         console.log('Response data:', data);
-
+  
         if (!response.ok) {
           throw new Error(data.message || 'Failed to fetch next invoice number');
         }
-
+  
+        // Update sell details with the fetched invoice number
         setSellDetails(prev => ({
           ...prev,
-          saleInvoiceNumber: data.invoiceNumber,
+          saleInvoiceNumber: data.invoiceNumber || "INV001", // Fallback to INV001 if no invoice number
           date: new Date().toISOString().split("T")[0],
           receiptNumber: "",
           partyName: "",
           email: "",
           gstNumber: "",
         }));
+        
       } catch (error) {
         console.error('Error fetching next invoice number:', error);
         setMessage(error.message);
+        
+        // Set default invoice number in case of any error
         setSellDetails(prev => ({
           ...prev,
           saleInvoiceNumber: "INV001",
@@ -163,7 +184,7 @@ const SellBillForm = () => {
         }));
       }
     };
-
+  
     fetchNextInvoiceNumber();
   }, []);
 
