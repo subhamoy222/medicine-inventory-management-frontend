@@ -862,14 +862,15 @@ const handleItemChange = (index, event) => {
 
         <div className="mb-8">
           <h3 className="text-xl font-semibold text-indigo-600 mb-4">Item Details</h3>
-          <div className="rounded-xl border-2 border-indigo-50 ">
+          <div className="rounded-xl border-2 border-indigo-50 overflow-x-auto">
             <table className="w-full">
               <thead className="bg-indigo-600 text-white">
                 <tr>
                   {["Item Name", "Batch", "Available", "Qty", "Purchase Rate", "MRP", "Discount%", "GST %", "Expiry Date", "Amount"].map((header, idx) => (
                     <th 
                       key={idx}
-                      className="px-4 py-3 text-left text-sm font-medium last:text-right"
+                      className="px-4 py-2 text-left text-sm font-medium last:text-right whitespace-nowrap"
+                      style={{minWidth: header === "Item Name" ? "180px" : "100px"}}
                     >
                       {header}
                     </th>
@@ -882,13 +883,13 @@ const handleItemChange = (index, event) => {
                     key={index}
                     className="hover:bg-indigo-50 transition-colors"
                   >
-                    <td className="px-4 py-3 relative">
+                    <td className="px-4 py-2 relative" style={{minWidth: "180px"}}>
                       <input
                         type="text"
                         name="itemName"
                         value={item.itemName}
                         onChange={(e) => handleItemChange(index, e)}
-                        className="w-full rounded-md border-indigo-100 focus:border-indigo-500 focus:ring-indigo-500"
+                        className="w-full rounded-md border-indigo-100 focus:border-indigo-500 focus:ring-indigo-500 py-1"
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveItemIndex(index);
@@ -929,12 +930,12 @@ const handleItemChange = (index, event) => {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2" style={{minWidth: "120px"}}>
                       <select
                         name="batch"
                         value={item.batch}
                         onChange={(e) => handleItemChange(index, e)}
-                        className="w-full rounded-md border-indigo-100 focus:border-indigo-500 focus:ring-indigo-500"
+                        className="w-full rounded-md border-indigo-100 focus:border-indigo-500 focus:ring-indigo-500 py-1"
                       >
                         <option value="">Select Batch</option>
                         {item.batchOptions.map((batch, idx) => (
@@ -944,20 +945,20 @@ const handleItemChange = (index, event) => {
                         ))}
                       </select>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-2 text-center whitespace-nowrap" style={{minWidth: "100px"}}>
                       {item.availableQuantity?.toString() ?? "-"}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2" style={{minWidth: "80px"}}>
                       <input
                         type="number"
                         name="quantity"
                         value={item.quantity}
                         onChange={(e) => handleItemChange(index, e)}
-                        className="w-full rounded-md border-indigo-100 focus:border-indigo-500 focus:ring-indigo-500"
+                        className="w-full rounded-md border-indigo-100 focus:border-indigo-500 focus:ring-indigo-500 py-1"
                         min="0"
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2" style={{minWidth: "120px"}}>
                       <div className="flex items-center">
                         <span className="text-gray-500 mr-1">₹</span>
                         <input
@@ -965,32 +966,32 @@ const handleItemChange = (index, event) => {
                           name="purchaseRate"
                           value={item.purchaseRate}
                           readOnly
-                          className="w-24 px-2 py-1 text-sm text-center bg-gray-50 border border-gray-300 rounded-md"
+                          className="w-full px-2 py-1 text-sm text-center bg-gray-50 border border-gray-300 rounded-md"
                         />
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2" style={{minWidth: "100px"}}>
                       <input
                         type="number"
                         name="mrp"
                         value={item.mrp}
                         disabled
-                        className="w-full rounded-md bg-indigo-50 border-indigo-100"
+                        className="w-full rounded-md bg-indigo-50 border-indigo-100 py-1"
                       />
                     </td>
                     
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2" style={{minWidth: "100px"}}>
                       <input
                         type="number"
                         name="discount"
                         value={item.discount}
                         onChange={(e) => handleItemChange(index, e)}
-                        className="w-full rounded-md border-indigo-100 focus:border-indigo-500 focus:ring-indigo-500"
+                        className="w-full rounded-md border-indigo-100 focus:border-indigo-500 focus:ring-indigo-500 py-1"
                         min="0"
                         max="100"
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2" style={{minWidth: "100px"}}>
                       <div className="flex items-center">
                         <input
                           type="number"
@@ -1000,21 +1001,21 @@ const handleItemChange = (index, event) => {
                           step="0.01"
                           min="0"
                           max="100"
-                          className="w-16 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                         />
                         <span className="text-gray-500 ml-1">%</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2" style={{minWidth: "140px"}}>
                       <input
                         type="date"
                         name="expiryDate"
                         value={item.expiryDate ? new Date(item.expiryDate).toISOString().split('T')[0] : ''}
                         readOnly
-                        className="w-full rounded-md bg-indigo-50 border-indigo-100"
+                        className="w-full rounded-md bg-indigo-50 border-indigo-100 py-1"
                       />
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-emerald-600">
+                    <td className="px-4 py-2 text-right font-medium text-emerald-600 whitespace-nowrap" style={{minWidth: "100px"}}>
                       {item.amount || "-"}
                     </td>
                   </tr>
