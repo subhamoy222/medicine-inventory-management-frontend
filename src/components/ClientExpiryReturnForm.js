@@ -43,6 +43,7 @@ const ClientExpiryReturnForm = () => {
   const [formData, setFormData] = useState({
     partyName: '',
     date: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
     email: '',
     notes: ''
   });
@@ -101,8 +102,10 @@ const ClientExpiryReturnForm = () => {
       // Create URL with explicitly encoded parameters to avoid parameter problems
       const partyName = encodeURIComponent(formData.partyName);
       const email = encodeURIComponent(formData.email);
+      const startDate = encodeURIComponent(formData.date);
+      const endDate = encodeURIComponent(formData.endDate);
       
-      const url = `${API_BASE_URL}/api/expiry-bills/client-purchase-history?partyName=${partyName}&email=${email}`;
+      const url = `${API_BASE_URL}/api/expiry-bills/client-purchase-history?partyName=${partyName}&email=${email}&startDate=${startDate}&endDate=${endDate}`;
       
       console.log('Requesting URL:', url);
       
@@ -141,8 +144,10 @@ const ClientExpiryReturnForm = () => {
       const partyName = encodeURIComponent(formData.partyName);
       const email = encodeURIComponent(formData.email);
       const itemNameEncoded = encodeURIComponent(medicineName);
+      const startDate = encodeURIComponent(formData.date);
+      const endDate = encodeURIComponent(formData.endDate);
       
-      const url = `${API_BASE_URL}/api/expiry-bills/client-purchase-history?partyName=${partyName}&email=${email}&itemName=${itemNameEncoded}`;
+      const url = `${API_BASE_URL}/api/expiry-bills/client-purchase-history?partyName=${partyName}&email=${email}&itemName=${itemNameEncoded}&startDate=${startDate}&endDate=${endDate}`;
       
       console.log('Requesting medicine batches URL:', url);
       
@@ -188,6 +193,26 @@ const ClientExpiryReturnForm = () => {
       });
       
       // Only fetch if there's a valid party name (at least 3 characters)
+      setTimeout(() => fetchClientMedicines(), 500);
+    }
+    
+    // When date fields change and party name exists, refresh medicine list
+    if ((name === 'date' || name === 'endDate') && formData.partyName.trim().length > 2) {
+      setMedicinesList([]);
+      setBatchesList([]);
+      // Clear the selected item too since the available medicines may change
+      setSelectedItem({
+        itemName: '',
+        batch: '',
+        soldQuantity: 0,
+        returnQuantity: 0,
+        originalSaleInvoiceNumber: '',
+        expiryDate: '',
+        mrp: 0,
+        purchaseRate: 0
+      });
+      
+      // Fetch updated medicine list with new date range
       setTimeout(() => fetchClientMedicines(), 500);
     }
   };
@@ -306,6 +331,7 @@ const ClientExpiryReturnForm = () => {
       const payload = {
         partyName: formData.partyName,
         date: formData.date,
+        endDate: formData.endDate,
         items: returnItems.map(item => ({
           itemName: item.itemName,
           batch: item.batch,
@@ -335,6 +361,7 @@ const ClientExpiryReturnForm = () => {
         setFormData({
           partyName: '',
           date: new Date().toISOString().split('T')[0],
+          endDate: new Date().toISOString().split('T')[0],
           email: formData.email,
           notes: ''
         });
@@ -403,7 +430,8 @@ const ClientExpiryReturnForm = () => {
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 100, 100);
       doc.text(`Name: ${billData.partyName}`, 120, 56);
-      doc.text(`Date: ${new Date(billData.date).toLocaleDateString()}`, 120, 61);
+      doc.text(`Start Date: ${new Date(billData.date).toLocaleDateString()}`, 120, 61);
+      doc.text(`End Date: ${new Date(billData.endDate).toLocaleDateString()}`, 120, 66);
       
       // Add item table
       doc.setFontSize(12);
@@ -533,7 +561,7 @@ const ClientExpiryReturnForm = () => {
         <div className="grid grid-cols-1 gap-8">
           {/* Form Section */}
           <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-indigo-500">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               {/* Client and Date Selection */}
               <div>
                 <label htmlFor="partyName" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -556,13 +584,27 @@ const ClientExpiryReturnForm = () => {
               
               <div>
                 <label htmlFor="date" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Return Date
+                  Start Date
                 </label>
                 <input
                   type="date"
                   id="date"
                   name="date"
                   value={formData.date}
+                  onChange={handleInputChange}
+                  className="w-full p-3 text-md border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="endDate" className="block text-sm font-semibold text-gray-700 mb-2">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  id="endDate"
+                  name="endDate"
+                  value={formData.endDate}
                   onChange={handleInputChange}
                   className="w-full p-3 text-md border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                 />
@@ -793,7 +835,7 @@ const ClientExpiryReturnForm = () => {
                 )}
               </button>
             </div>
-      </form>
+          </form>
         </div>
       </div>
     </div>
