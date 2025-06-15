@@ -129,7 +129,7 @@
 
 
 import React, { useEffect, useState } from 'react';
-import { SearchIcon, RefreshCw, AlertCircle, Package, Calendar, Tag, User, DollarSign, TrendingUp, Shield, Activity } from 'lucide-react';
+import { Search, RefreshCw, AlertCircle, Package, Calendar, Tag, User, DollarSign, TrendingUp, Shield, Activity, History, Eye } from 'lucide-react';
 
 const Inventory = () => {
   const [inventory, setInventory] = useState([]);
@@ -141,13 +141,15 @@ const Inventory = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expiringSoon, setExpiringSoon] = useState([]);
   const [lowStock, setLowStock] = useState([]);
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('active'); // Changed default to 'active'
+  const [showHistory, setShowHistory] = useState(false);
 
   const fetchInventory = async () => {
     try {
       setIsRefreshing(true);
+      // Using in-memory storage instead of localStorage
       const email = localStorage.getItem('email');
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token'); // Replace with actual auth system
       
       if (!email || !token) {
         throw new Error('Authentication required');
@@ -173,24 +175,26 @@ const Inventory = () => {
       // Process inventory data - ensure party name is properly handled
       const inventoryWithPartyName = data.map(item => ({
         ...item,
-        partyName: item.partyName?.trim() || 'Unknown Supplier', // Handle empty party names
+        partyName: item.partyName?.trim() || 'Unknown Supplier',
         expiryDate: item.expiryDate ? new Date(item.expiryDate) : null
       }));
 
       setInventory(inventoryWithPartyName);
-      setFilteredInventory(inventoryWithPartyName);
       
-      // Find items expiring in the next 30 days
+      // Find items expiring in the next 30 days (only for items with quantity > 0)
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
       
       const expiring = inventoryWithPartyName.filter(item => 
-        item.expiryDate && item.expiryDate <= thirtyDaysFromNow && item.expiryDate >= new Date()
+        item.quantity > 0 && 
+        item.expiryDate && 
+        item.expiryDate <= thirtyDaysFromNow && 
+        item.expiryDate >= new Date()
       );
       setExpiringSoon(expiring);
       
-      // Find items with low stock (less than 10 units)
-      const low = inventoryWithPartyName.filter(item => item.quantity < 10 && item.quantity > 0);
+      // Find items with low stock (1-9 units)
+      const low = inventoryWithPartyName.filter(item => item.quantity > 0 && item.quantity < 10);
       setLowStock(low);
       
       setError(null);
@@ -210,9 +214,20 @@ const Inventory = () => {
   }, []);
 
   useEffect(() => {
-    // Filter inventory when search term or party filter changes
+    // Filter inventory when search term, party filter, or active filter changes
     if (inventory.length) {
       let filtered = inventory;
+      
+      // Apply quantity filter first
+      if (activeFilter === 'active') {
+        filtered = filtered.filter(item => item.quantity > 0);
+      } else if (activeFilter === 'history') {
+        filtered = filtered.filter(item => item.quantity <= 0);
+      } else if (activeFilter === 'expiring') {
+        filtered = filtered.filter(item => item.quantity > 0 && expiringSoon.some(exp => exp._id === item._id));
+      } else if (activeFilter === 'lowstock') {
+        filtered = filtered.filter(item => item.quantity > 0 && item.quantity < 10);
+      }
       
       // Apply party filter
       if (partyFilter) {
@@ -230,19 +245,16 @@ const Inventory = () => {
         );
       }
       
-      // Apply special filters
-      if (activeFilter === 'expiring') {
-        filtered = filtered.filter(item => expiringSoon.some(exp => exp._id === item._id));
-      } else if (activeFilter === 'lowstock') {
-        filtered = filtered.filter(item => item.quantity < 10 && item.quantity > 0);
-      }
-      
       setFilteredInventory(filtered);
     }
   }, [searchTerm, partyFilter, inventory, activeFilter, expiringSoon]);
 
-  // Get unique party names for filter
-  const uniquePartyNames = [...new Set(inventory.map(item => item.partyName))].sort();
+  // Get unique party names for filter (only from active items)
+  const uniquePartyNames = [...new Set(
+    inventory
+      .filter(item => activeFilter === 'history' ? item.quantity <= 0 : item.quantity > 0)
+      .map(item => item.partyName)
+  )].sort();
 
   // Format date accounting for null values
   const formatDate = (dateObj) => {
@@ -262,11 +274,15 @@ const Inventory = () => {
     return dateObj <= thirtyDaysFromNow && dateObj >= new Date();
   };
   
-  // Calculate total inventory value
-  const totalInventoryValue = inventory.reduce((sum, item) => {
+  // Calculate total inventory value (only for active items)
+  const activeInventory = inventory.filter(item => item.quantity > 0);
+  const totalInventoryValue = activeInventory.reduce((sum, item) => {
     const itemValue = (item.purchaseRate || 0) * (item.quantity || 0);
     return sum + itemValue;
   }, 0);
+
+  // Get history items count
+  const historyItemsCount = inventory.filter(item => item.quantity <= 0).length;
 
   return (
     <div className="bg-slate-50 min-h-screen pb-8">
@@ -274,7 +290,9 @@ const Inventory = () => {
       <div className="bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-700 py-8 px-6 shadow-lg">
         <div className="container mx-auto">
           <h1 className="text-3xl font-bold text-white">Medicine Inventory</h1>
-          <p className="text-blue-100 mt-2 text-lg">Manage your pharmaceutical stock efficiently</p>
+          <p className="text-blue-100 mt-2 text-lg">
+            {activeFilter === 'history' ? 'Product History & Returns' : 'Manage your pharmaceutical stock efficiently'}
+          </p>
         </div>
       </div>
       
@@ -284,9 +302,9 @@ const Inventory = () => {
           <div className="bg-white rounded-lg shadow-lg p-5 border-b-4 border-indigo-500 transition-all hover:shadow-xl">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-gray-500 text-sm font-medium">Total Medicines</p>
-                <p className="text-3xl font-bold text-gray-800">{inventory.length}</p>
-                <p className="text-indigo-500 text-sm mt-1">Unique products</p>
+                <p className="text-gray-500 text-sm font-medium">Active Medicines</p>
+                <p className="text-3xl font-bold text-gray-800">{activeInventory.length}</p>
+                <p className="text-indigo-500 text-sm mt-1">In stock</p>
               </div>
               <div className="bg-indigo-100 p-4 rounded-full">
                 <Package className="h-8 w-8 text-indigo-600" />
@@ -323,19 +341,29 @@ const Inventory = () => {
           <div className="bg-white rounded-lg shadow-lg p-5 border-b-4 border-emerald-500 transition-all hover:shadow-xl">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-gray-500 text-sm font-medium">Inventory Value</p>
-                <p className="text-3xl font-bold text-gray-800">₹{totalInventoryValue.toLocaleString('en-IN')}</p>
-                <p className="text-emerald-500 text-sm mt-1">Total investment</p>
+                <p className="text-gray-500 text-sm font-medium">
+                  {activeFilter === 'history' ? 'History Items' : 'Inventory Value'}
+                </p>
+                <p className="text-3xl font-bold text-gray-800">
+                  {activeFilter === 'history' ? historyItemsCount : `₹${totalInventoryValue.toLocaleString('en-IN')}`}
+                </p>
+                <p className="text-emerald-500 text-sm mt-1">
+                  {activeFilter === 'history' ? 'Total records' : 'Total investment'}
+                </p>
               </div>
               <div className="bg-emerald-100 p-4 rounded-full">
-                <DollarSign className="h-8 w-8 text-emerald-600" />
+                {activeFilter === 'history' ? (
+                  <History className="h-8 w-8 text-emerald-600" />
+                ) : (
+                  <DollarSign className="h-8 w-8 text-emerald-600" />
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Alert Cards */}
-        {(lowStock.length > 0 || expiringSoon.length > 0) && (
+        {/* Alert Cards - Only show for active inventory */}
+        {activeFilter !== 'history' && (lowStock.length > 0 || expiringSoon.length > 0) && (
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             {lowStock.length > 0 && (
               <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md shadow">
@@ -391,40 +419,60 @@ const Inventory = () => {
           </div>
         )}
 
-        {/* Filter Pills */}
+        {/* Enhanced Filter Pills */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-gray-700 font-medium">Quick Filters:</span>
+            <span className="text-gray-700 font-medium">View:</span>
             <button 
-              onClick={() => setActiveFilter('all')}
+              onClick={() => setActiveFilter('active')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeFilter === 'all' 
+                activeFilter === 'active' 
                   ? 'bg-indigo-600 text-white' 
                   : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
               }`}
             >
-              All Items
+              <Eye className="h-4 w-4 inline mr-1" />
+              Active Stock ({activeInventory.length})
             </button>
             <button 
-              onClick={() => setActiveFilter('lowstock')}
+              onClick={() => setActiveFilter('history')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeFilter === 'lowstock' 
-                  ? 'bg-amber-500 text-white' 
-                  : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
+                activeFilter === 'history' 
+                  ? 'bg-slate-600 text-white' 
+                  : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
               }`}
             >
-              Low Stock ({lowStock.length})
+              <History className="h-4 w-4 inline mr-1" />
+              Product History ({historyItemsCount})
             </button>
-            <button 
-              onClick={() => setActiveFilter('expiring')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeFilter === 'expiring' 
-                  ? 'bg-rose-500 text-white' 
-                  : 'bg-rose-50 text-rose-800 hover:bg-rose-100'
-              }`}
-            >
-              Expiring Soon ({expiringSoon.length})
-            </button>
+            
+            {/* Additional filters only for active stock */}
+            {activeFilter !== 'history' && (
+              <>
+                <div className="w-px h-6 bg-gray-300 mx-2"></div>
+                <span className="text-gray-700 font-medium">Quick Filters:</span>
+                <button 
+                  onClick={() => setActiveFilter('lowstock')}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    activeFilter === 'lowstock' 
+                      ? 'bg-amber-500 text-white' 
+                      : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
+                  }`}
+                >
+                  Low Stock ({lowStock.length})
+                </button>
+                <button 
+                  onClick={() => setActiveFilter('expiring')}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    activeFilter === 'expiring' 
+                      ? 'bg-rose-500 text-white' 
+                      : 'bg-rose-50 text-rose-800 hover:bg-rose-100'
+                  }`}
+                >
+                  Expiring Soon ({expiringSoon.length})
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -433,7 +481,7 @@ const Inventory = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon className="h-5 w-5 text-gray-400" />
+                <Search className="h-5 w-5 text-gray-400" />
               </div>
               <input
                 type="text"
@@ -496,19 +544,26 @@ const Inventory = () => {
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             {filteredInventory.length === 0 ? (
               <div className="p-12 text-center">
-                <Package className="h-16 w-16 text-gray-400 mx-auto mb-6" />
-                <h3 className="text-xl font-medium text-gray-900">No inventory items found</h3>
+                {activeFilter === 'history' ? (
+                  <History className="h-16 w-16 text-gray-400 mx-auto mb-6" />
+                ) : (
+                  <Package className="h-16 w-16 text-gray-400 mx-auto mb-6" />
+                )}
+                <h3 className="text-xl font-medium text-gray-900">
+                  {activeFilter === 'history' ? 'No history records found' : 'No inventory items found'}
+                </h3>
                 <p className="mt-2 text-gray-500 text-lg">
-                  {searchTerm || partyFilter || activeFilter !== 'all' ? 
+                  {searchTerm || partyFilter ? 
                     "Try adjusting your search filters" : 
-                    "Add items to your inventory to get started"}
+                    activeFilter === 'history' ? 
+                      "No returned or expired items in history" :
+                      "Add items to your inventory to get started"}
                 </p>
-                {(searchTerm || partyFilter || activeFilter !== 'all') && (
+                {(searchTerm || partyFilter) && (
                   <button
                     onClick={() => {
                       setSearchTerm('');
                       setPartyFilter('');
-                      setActiveFilter('all');
                     }}
                     className="mt-6 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 transition-colors"
                   >
@@ -537,11 +592,17 @@ const Inventory = () => {
                       <tr 
                         key={item._id} 
                         className={`hover:bg-blue-50 transition-colors ${
-                          item.quantity < 10 && item.quantity > 0 ? 'bg-amber-50' : ''
-                        } ${isExpiringSoon(item.expiryDate) ? 'bg-rose-50' : ''}`}
+                          item.quantity <= 0 ? 'bg-red-50' : 
+                          item.quantity < 10 ? 'bg-amber-50' : ''
+                        } ${item.quantity > 0 && isExpiringSoon(item.expiryDate) ? 'bg-rose-50' : ''}`}
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-medium text-gray-900">{item.itemName}</div>
+                          {item.quantity <= 0 && (
+                            <div className="text-xs text-red-600 mt-1">
+                              {item.quantity < 0 ? 'Returned/Expired' : 'Out of Stock'}
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="text-gray-600 text-sm">{item.batch}</span>
@@ -553,7 +614,7 @@ const Inventory = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`text-sm ${
-                            isExpiringSoon(item.expiryDate) 
+                            item.quantity > 0 && isExpiringSoon(item.expiryDate) 
                               ? 'text-rose-600 font-medium' 
                               : 'text-gray-600'
                           }`}>
@@ -565,13 +626,18 @@ const Inventory = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium ${
-                            item.quantity < 10 && item.quantity > 0 
-                              ? 'bg-amber-100 text-amber-800' 
-                              : item.quantity > 100 
-                                ? 'bg-emerald-100 text-emerald-800' 
-                                : 'bg-gray-100 text-gray-800'
+                            item.quantity <= 0 
+                              ? 'bg-red-100 text-red-800' 
+                              : item.quantity < 10 
+                                ? 'bg-amber-100 text-amber-800' 
+                                : item.quantity > 100 
+                                  ? 'bg-emerald-100 text-emerald-800' 
+                                  : 'bg-gray-100 text-gray-800'
                           }`}>
                             {item.quantity}
+                            {item.quantity < 0 && (
+                              <span className="ml-1 text-xs">(Return)</span>
+                            )}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -598,19 +664,21 @@ const Inventory = () => {
               <div className="flex items-center text-gray-600 text-sm">
                 <Activity className="h-4 w-4 mr-2 text-indigo-500" />
                 Showing <span className="font-medium mx-1">{filteredInventory.length}</span> of{' '}
-                <span className="font-medium mx-1">{inventory.length}</span> items
-                {activeFilter !== 'all' && (
+                <span className="font-medium mx-1">
+                  {activeFilter === 'history' ? historyItemsCount : activeInventory.length}
+                </span> items
+                {(activeFilter === 'lowstock' || activeFilter === 'expiring') && (
                   <span className="ml-2">
                     ({activeFilter === 'lowstock' ? 'Low Stock' : 'Expiring Soon'} filter active)
                   </span>
                 )}
               </div>
-              {activeFilter !== 'all' && (
+              {(activeFilter === 'lowstock' || activeFilter === 'expiring') && (
                 <button
-                  onClick={() => setActiveFilter('all')}
+                  onClick={() => setActiveFilter('active')}
                   className="text-sm text-indigo-600 hover:text-indigo-900"
                 >
-                  Show All Items
+                  Show All Active Items
                 </button>
               )}
             </div>
