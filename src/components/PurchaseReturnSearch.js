@@ -28,11 +28,11 @@ const PurchaseReturnSearch = () => {
     try {
       // Ensure supplier name is trimmed and capitalized to match backend
       const formattedSupplierName = supplierName.trim();
-      const encodedSupplierName = encodeURIComponent(formattedSupplierName);
-      const encodedEmail = encodeURIComponent(email.trim());
-      const url = `${API_BASE_URL}/api/purchase-returns/returnable-quantities?email=${encodedEmail}&supplierName=${encodedSupplierName}`;
-      console.log('Requesting Purchase Return Search URL:', url);
-      const response = await axiosInstance.get(url);
+      const formattedEmail = email.trim();
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}/api/purchase-returns/returnable-quantities`,
+        { params: { email: formattedEmail, supplierName: formattedSupplierName } }
+      );
 
       const items = response.data.map(item => ({
         ...item,
@@ -241,7 +241,7 @@ const PurchaseReturnSearch = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  {["Item Name", "Batch", "Purchased Qty", "Sold Qty", "Avg Price", "Total Purchase", "Total Sale", "Expiry Date"].map(header => (
+                  {["Item Name", "Batch", "Purchased Qty", "Sold Qty", "Returned Qty", "Returnable Qty", "Avg Price", "Total Purchase", "Total Sale", "Expiry Date"].map(header => (
                     <th key={header} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {header}
                     </th>
@@ -255,6 +255,8 @@ const PurchaseReturnSearch = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.batch}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.purchasedQuantity}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.soldQuantity}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.returnedQuantity}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.returnableQuantity}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{item.avgPrice.toFixed(2)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{item.totalPurchaseValue.toFixed(2)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{item.totalSaleValue.toFixed(2)}</td>
