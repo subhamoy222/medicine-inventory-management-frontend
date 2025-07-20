@@ -109,7 +109,7 @@ const ClientExpiryReturnForm = () => {
       
       console.log('Requesting URL:', url);
       
-      const response = await axios.get(url);
+      const response = await axiosInstance.get(url);
       
       if (response.data.success && response.data.data.length > 0) {
         // Extract unique medicine names
@@ -151,7 +151,7 @@ const ClientExpiryReturnForm = () => {
       
       console.log('Requesting medicine batches URL:', url);
       
-      const response = await axios.get(url);
+      const response = await axiosInstance.get(url);
       
       if (response.data.success && response.data.data.length > 0) {
         setBatchesList(response.data.data);
@@ -346,7 +346,7 @@ const ClientExpiryReturnForm = () => {
         notes: formData.notes
       };
       
-      const response = await axios.post(`${API_BASE_URL}/api/expiry-bills/client`, payload, {
+      const response = await axiosInstance.post(`${API_BASE_URL}/api/expiry-bills/client`, payload, {
         headers: {
           'Content-Type': 'application/json'
         }

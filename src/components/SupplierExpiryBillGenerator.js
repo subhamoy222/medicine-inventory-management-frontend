@@ -126,7 +126,7 @@ const SupplierExpiryBillGenerator = () => {
       
       console.log('Requesting URL:', url);
       
-      const response = await axios.get(url);
+      const response = await axiosInstance.get(url);
       
       console.log('Expiry items response:', response.data);
       
@@ -309,7 +309,7 @@ const SupplierExpiryBillGenerator = () => {
       
       console.log('Submitting supplier expiry return with payload:', payload);
       
-      const response = await axios.post(`${API_BASE_URL}/api/expiry-bills/supplier`, payload, {
+      const response = await axiosInstance.post(`${API_BASE_URL}/api/expiry-bills/supplier`, payload, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
