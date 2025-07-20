@@ -875,16 +875,9 @@ function Dashboard() {
 
     console.log('Setting up socket connection for:', userEmail);
 
-    const handleInventoryUpdate = (data) => {
-      console.log('WebSocket inventory update received:', data);
-      if (data && data.userEmail === userEmail) {
-        if (typeof data.count === 'number') {
-          setInventoryCount(data.count);
-        }
-        if (data.data && Array.isArray(data.data)) {
-          processInventoryData(data.data);
-        }
-      }
+    const handleInventoryUpdate = () => {
+      // Always fetch the latest inventory when an update is received
+      fetchDashboardData();
     };
 
     const handleDashboardUpdate = (data) => {
@@ -934,7 +927,7 @@ function Dashboard() {
       socket.off(SOCKET_EVENTS.DASHBOARD_UPDATE, handleDashboardUpdate);
       socketConnectedRef.current = false;
     };
-  }, [socket, processInventoryData, fetchUserEmail]);
+  }, [socket, processInventoryData, fetchUserEmail, fetchDashboardData, fetchAnalyticsData]);
 
   // Initial data fetch
   useEffect(() => {
