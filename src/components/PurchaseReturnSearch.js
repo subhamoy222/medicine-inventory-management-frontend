@@ -41,7 +41,8 @@ const PurchaseReturnSearch = () => {
       setSearchResults(items);
       setActiveTab('results');
     } catch (err) {
-      // Show more detailed error if available
+      // Log the full error for debugging
+      console.error('Purchase Return Search Error:', err, err.response);
       setError(err.response?.data?.message || err.message || 'Error fetching data');
     } finally {
       setLoading(false);
@@ -198,7 +199,9 @@ const PurchaseReturnSearch = () => {
   );
 
   const renderResults = () => {
-    if (searchResults.length === 0) return null;
+    if (searchResults.length === 0 && !loading) {
+      return <div className="text-center text-gray-500 mt-8">No results found for the given criteria.</div>;
+    }
 
     const totals = calculateTotals();
     const statCards = [
