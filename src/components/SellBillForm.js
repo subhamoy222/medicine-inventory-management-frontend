@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback, useReducer } from "react";
 import jsPDF from "jspdf";
+import { useSocket } from '../context/SocketContext';
+import { SOCKET_EVENTS } from '../utils/socketUtils';
+import { useRef } from 'react';
 
 // Custom hook for managing items
 const useItems = (initialGstNumber) => {
@@ -109,6 +112,9 @@ const SellBillForm = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [activeItemIndex, setActiveItemIndex] = useState(null);
+
+  const socket = useSocket();
+  const fetchTimeout = useRef(null);
 
   // Use the custom hook for items management
   const { items, updateItem, addItem, resetItems } = useItems(sellDetails.gstNumber);
@@ -441,6 +447,27 @@ const handleItemChange = (index, event) => {
       document.removeEventListener('click', handleClickOutside);
     };
   }, []);
+
+  // Real-time inventory update via WebSocket
+  useEffect(() => {
+    if (!socket) return;
+    const handleInventoryUpdate = () => {
+      if (fetchTimeout.current) clearTimeout(fetchTimeout.current);
+      fetchTimeout.current = setTimeout(() => {
+        // Re-fetch suggestions for the active item (if any)
+        if (activeItemIndex !== null && items[activeItemIndex]?.itemName) {
+          const email = localStorage.getItem('email');
+          fetchInventoryData(items[activeItemIndex].itemName, email, activeItemIndex);
+        }
+        fetchTimeout.current = null;
+      }, 1000); // debounce
+    };
+    socket.on(SOCKET_EVENTS.INVENTORY_UPDATE, handleInventoryUpdate);
+    return () => {
+      socket.off(SOCKET_EVENTS.INVENTORY_UPDATE, handleInventoryUpdate);
+      if (fetchTimeout.current) clearTimeout(fetchTimeout.current);
+    };
+  }, [socket, activeItemIndex, items, fetchInventoryData]);
 
   const generatePDF = () => {
     const doc = new jsPDF();

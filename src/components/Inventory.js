@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Search, RefreshCw, AlertCircle, Package, Calendar, Tag, User, DollarSign, TrendingUp, Shield, Activity, History, Eye } from 'lucide-react';
+import { useSocket } from '../context/SocketContext';
+import { SOCKET_EVENTS } from '../utils/socketUtils';
 
 const Inventory = () => {
   const [inventory, setInventory] = useState([]);
@@ -13,6 +15,8 @@ const Inventory = () => {
   const [lowStock, setLowStock] = useState([]);
   const [activeFilter, setActiveFilter] = useState('active'); // Changed default to 'active'
   const [showHistory, setShowHistory] = useState(false);
+  const socket = useSocket();
+  const fetchTimeout = useRef(null);
 
   const fetchInventory = async () => {
     try {
@@ -82,6 +86,23 @@ const Inventory = () => {
   useEffect(() => {
     fetchInventory();
   }, []);
+
+  // Real-time inventory update via WebSocket
+  useEffect(() => {
+    if (!socket) return;
+    const handleInventoryUpdate = () => {
+      if (fetchTimeout.current) clearTimeout(fetchTimeout.current);
+      fetchTimeout.current = setTimeout(() => {
+        fetchInventory();
+        fetchTimeout.current = null;
+      }, 1000); // debounce
+    };
+    socket.on(SOCKET_EVENTS.INVENTORY_UPDATE, handleInventoryUpdate);
+    return () => {
+      socket.off(SOCKET_EVENTS.INVENTORY_UPDATE, handleInventoryUpdate);
+      if (fetchTimeout.current) clearTimeout(fetchTimeout.current);
+    };
+  }, [socket]);
 
   useEffect(() => {
     // Filter inventory when search term, party filter, or active filter changes
