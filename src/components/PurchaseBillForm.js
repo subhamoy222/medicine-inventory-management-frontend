@@ -4,6 +4,7 @@ import "jspdf-autotable";
 import { useSocket } from '../context/SocketContext';
 import { useNavigate } from 'react-router-dom';
 import { SOCKET_EVENTS } from '../utils/socketUtils';
+import axios from 'axios';
 
 const PurchaseBillForm = () => {
   const socket = useSocket();
@@ -34,6 +35,10 @@ const PurchaseBillForm = () => {
   });
 
   const [message, setMessage] = useState("");
+
+  // Add new state for file upload and loading
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   // Add socket event listener for inventory updates
   useEffect(() => {
@@ -304,6 +309,44 @@ const PurchaseBillForm = () => {
     netAmount: items.reduce((sum, item) => sum + parseFloat(item.netAmount || 0), 0).toFixed(2)
   };
 
+  // Handler for file input change
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setUploadFile(e.target.files[0]);
+    }
+  };
+
+  // Handler for uploading the file to backend
+  const handleUpload = async () => {
+    if (!uploadFile) {
+      setMessage('Please select an image or PDF file to upload.');
+      return;
+    }
+    setUploading(true);
+    setMessage('Uploading and processing...');
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadFile);
+      // Adjust the endpoint as per your backend route
+      const response = await axios.post('/api/ocr-bill', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const data = response.data;
+      // Assume backend returns { purchaseDetails, items }
+      if (data.purchaseDetails && data.items) {
+        setPurchaseDetails(data.purchaseDetails);
+        setItems(data.items);
+        setMessage('Bill data extracted and form auto-filled!');
+      } else {
+        setMessage('Could not extract bill data. Please check the file or fill manually.');
+      }
+    } catch (error) {
+      setMessage('Error processing file. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-8 bg-gradient-to-r from-blue-50 via-white to-blue-50 shadow-2xl rounded-xl">
       <h2 className="text-4xl font-bold text-center text-blue-600 mb-10">
@@ -432,6 +475,26 @@ const PurchaseBillForm = () => {
           className="bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-shadow shadow-md"
         >
           Create Purchase Bill
+        </button>
+      </div>
+
+      <div className="mb-4">
+        <label htmlFor="bill-upload" className="block font-medium mb-1">Upload Bill (Image or PDF):</label>
+        <input
+          type="file"
+          id="bill-upload"
+          accept="image/*,application/pdf"
+          onChange={handleFileChange}
+          className="border p-2 rounded w-full"
+          disabled={uploading}
+        />
+        <button
+          type="button"
+          onClick={handleUpload}
+          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          disabled={uploading || !uploadFile}
+        >
+          {uploading ? 'Processing...' : 'Upload & Extract Bill'}
         </button>
       </div>
 
