@@ -846,7 +846,30 @@ const handleItemChange = (index, event) => {
           setMessage({ type: 'error', text: "Invoice created but failed to update inventory" });
         }
       } else {
-        setMessage({ type: 'error', text: responseData.message || "Failed to create invoice" });
+        // If the bill was created and pdfUrl is present, treat as success
+        if (responseData.pdfUrl) {
+          try {
+            const pdfResponse = await fetch(`https://medicine-inventory-management-backend.onrender.com${responseData.pdfUrl}`);
+            const blob = await pdfResponse.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${sellDetails.saleInvoiceNumber}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            setMessage({ type: 'success', text: 'Invoice created and PDF downloaded!' });
+            generatePDF();
+            resetItems();
+            resetForm();
+          } catch (pdfError) {
+            console.error('Error downloading PDF:', pdfError);
+            setMessage({ type: 'error', text: 'Invoice created but failed to download PDF.' });
+          }
+        } else {
+          setMessage({ type: 'error', text: responseData.message || "Failed to create invoice" });
+        }
       }
     } catch (error) {
       setMessage({ type: 'error', text: "Error creating invoice" });
