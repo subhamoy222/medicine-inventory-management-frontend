@@ -41,7 +41,8 @@ const PurchaseReturnSearch = () => {
       setSearchResults(items);
       setActiveTab('results');
     } catch (err) {
-      setError(err.response?.data?.message || 'Error fetching data');
+      // Show more detailed error if available
+      setError(err.response?.data?.message || err.message || 'Error fetching data');
     } finally {
       setLoading(false);
     }
