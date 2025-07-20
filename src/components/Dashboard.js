@@ -245,14 +245,16 @@ function Dashboard() {
       const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
       const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-      const response = await axiosInstance.get('/api/bills/medicine-sales', {
-        params: {
-          email: userEmail,
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: endDate.toISOString().split('T')[0],
-          medicineName: ''
-        }
-      });
+      // Only include medicineName if not empty
+      const params = {
+        email: userEmail,
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0]
+      };
+      // If you ever want to filter by medicine, add it here:
+      // if (medicineName && medicineName.trim() !== '') params.medicineName = medicineName;
+
+      const response = await axiosInstance.get('/api/bills/medicine-sales', { params });
 
       if (response.data && response.data.salesDetails) {
         const sales = response.data.salesDetails;
