@@ -26,9 +26,13 @@ const PurchaseReturnSearch = () => {
     setError('');
 
     try {
-      const response = await axiosInstance.get(`${API_BASE_URL}/api/purchase-returns/returnable-quantities`, {
-        params: { email, supplierName }
-      });
+      // Ensure supplier name is trimmed and capitalized to match backend
+      const formattedSupplierName = supplierName.trim();
+      const encodedSupplierName = encodeURIComponent(formattedSupplierName);
+      const encodedEmail = encodeURIComponent(email.trim());
+      const url = `${API_BASE_URL}/api/purchase-returns/returnable-quantities?email=${encodedEmail}&supplierName=${encodedSupplierName}`;
+      console.log('Requesting Purchase Return Search URL:', url);
+      const response = await axiosInstance.get(url);
 
       const items = response.data.map(item => ({
         ...item,
