@@ -819,7 +819,24 @@ const handleItemChange = (index, event) => {
       if (response.ok) {
         // Update inventory quantities after successful bill creation
         const inventoryUpdated = await updateInventoryQuantities(items);
-        
+        // Download PDF if available
+        if (responseData.pdfUrl) {
+          try {
+            const pdfResponse = await fetch(`https://medicine-inventory-management-backend.onrender.com${responseData.pdfUrl}`);
+            const blob = await pdfResponse.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${sellDetails.saleInvoiceNumber}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+          } catch (pdfError) {
+            console.error('Error downloading PDF:', pdfError);
+            setMessage({ type: 'error', text: 'Invoice created but failed to download PDF.' });
+          }
+        }
         if (inventoryUpdated) {
           setMessage({ type: 'success', text: "Invoice created and inventory updated successfully!" });
           generatePDF();
