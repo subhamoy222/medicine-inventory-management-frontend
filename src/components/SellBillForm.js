@@ -253,90 +253,77 @@ const SellBillForm = () => {
     };
   };
 
-  // Fetch inventory data with debounce
-  // Replace the existing fetchInventoryData function with this updated version
-const fetchInventoryData = useCallback(
-  debounce(async (itemName, email, index) => {
-    if (!itemName || !email) return;
-    
-    setSearchLoading(true);
-    try {
-      // Get the authentication token
-      const token = localStorage.getItem("token");
-      
-      // Make the API request with proper authentication header
-      const response = await fetch(
-        `https://medicine-inventory-management-backend.onrender.com/api/inventory?itemName=${encodeURIComponent(
-          itemName.toLowerCase()
-        )}&email=${encodeURIComponent(email)}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+  // Replace inventory fetch logic to use /api/inventory/available
+  const fetchInventoryData = useCallback(
+    debounce(async (itemName, email, index) => {
+      if (!itemName || !email) return;
+      setSearchLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        // Use the new endpoint
+        const response = await fetch(
+          `https://medicine-inventory-management-backend.onrender.com/api/inventory/available?itemName=${encodeURIComponent(
+            itemName.toLowerCase()
+          )}&email=${encodeURIComponent(email)}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
           }
+        );
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${await response.text()}`);
         }
-      );
-      
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${await response.text()}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.length > 0) {
-        setSearchResults(data);
-        setShowAutocomplete(true);
-        
-        // Update the current item with the first result
-        const batchOptions = data.map((batch) => ({
-          batchNumber: batch.batch.replace(/[^a-zA-Z0-9]/g, ''),
-          quantity: batch.quantity,
-          mrp: batch.mrp,
-          purchaseRate: batch.purchaseRate,
-          gstNo: sellDetails.gstNumber,
-          expiryDate: batch.expiryDate
-        }));
-        
-        const sanitizedBatch = data[0].batch.replace(/[^a-zA-Z0-9]/g, '');
-        
-        updateItem(index, {
-          batchOptions,
-          batch: sanitizedBatch,
-          availableQuantity: data[0].quantity,
-          mrp: data[0].mrp?.toString() || "",
-          purchaseRate: data[0].purchaseRate?.toString() || "",
-          gstPercentage: data[0].gstPercentage?.toString() || "0",
-          expiryDate: data[0].expiryDate
-        });
-        
-        setMessage("");
-      } else {
+        const data = await response.json();
+        if (data.length > 0) {
+          setSearchResults(data);
+          setShowAutocomplete(true);
+          // Update the current item with the first result
+          const batchOptions = data.map((batch) => ({
+            batchNumber: batch.batch.replace(/[^a-zA-Z0-9]/g, ''),
+            quantity: batch.availableQuantity, // Use availableQuantity
+            mrp: batch.mrp,
+            purchaseRate: batch.purchaseRate,
+            gstNo: sellDetails.gstNumber,
+            expiryDate: batch.expiryDate
+          }));
+          const sanitizedBatch = data[0].batch.replace(/[^a-zA-Z0-9]/g, '');
+          updateItem(index, {
+            batchOptions,
+            batch: sanitizedBatch,
+            availableQuantity: data[0].availableQuantity, // Use availableQuantity
+            mrp: data[0].mrp?.toString() || "",
+            purchaseRate: data[0].purchaseRate?.toString() || "",
+            gstPercentage: data[0].gstPercentage?.toString() || "0",
+            expiryDate: data[0].expiryDate
+          });
+          setMessage("");
+        } else {
+          setSearchResults([]);
+          setShowAutocomplete(false);
+          setMessage(`No inventory found for ${itemName}`);
+          updateItem(index, {
+            batchOptions: [],
+            batch: "",
+            availableQuantity: 0,
+            mrp: "",
+            purchaseRate: "",
+            gstPercentage: "0",
+            expiryDate: ""
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching inventory:", error);
+        setMessage(`Error fetching inventory data: ${error.message}`);
         setSearchResults([]);
         setShowAutocomplete(false);
-        setMessage(`No inventory found for ${itemName}`);
-        
-        // Reset the current item
-        updateItem(index, {
-          batchOptions: [],
-          batch: "",
-          availableQuantity: 0,
-          mrp: "",
-          purchaseRate: "",
-          gstPercentage: "0",
-          expiryDate: ""
-        });
+      } finally {
+        setSearchLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching inventory:", error);
-      setMessage(`Error fetching inventory data: ${error.message}`);
-      setSearchResults([]);
-      setShowAutocomplete(false);
-    } finally {
-      setSearchLoading(false);
-    }
-  }, 300),
-  [sellDetails.gstNumber, updateItem]
-);
+    }, 300),
+    [sellDetails.gstNumber, updateItem]
+  );
 
 const handleItemChange = (index, event) => {
   const { name, value } = event.target;

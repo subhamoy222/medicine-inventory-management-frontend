@@ -83,31 +83,28 @@ const SaleReturnForm = () => {
     try {
       setFetchingBills(true);
       const token = localStorage.getItem('token');
-      
-      // Get returnable quantities from the new endpoint
-      const response = await axiosInstance.get('https://medicine-inventory-management-backend.onrender.com/api/bills/returnable-quantities', {
+      // Use the new available inventory endpoint
+      const response = await axiosInstance.get('https://medicine-inventory-management-backend.onrender.com/api/inventory/available', {
         params: {
           email: formData.email,
-          partyName: formData.customerName
+          // Optionally filter by itemName or batch if needed
         },
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
       if (response.data && Array.isArray(response.data)) {
-        // Store the medicines data with returnable quantities
+        // Store the medicines data with available quantities
         const formattedMedicines = response.data.map(medicine => ({
           itemName: medicine.itemName,
           batch: medicine.batch,
-          quantity: medicine.returnableQuantity, // This is now the actual returnable quantity
+          quantity: medicine.availableQuantity, // Use availableQuantity
           soldQuantity: medicine.soldQuantity,
           returnedQuantity: medicine.returnedQuantity,
           mrp: medicine.mrp,
-          purchaseRate: medicine.purchaseRate // Include purchase rate
+          purchaseRate: medicine.purchaseRate
         }));
-        
         setSaleBills(formattedMedicines);
         setSuccess('Medicines loaded successfully');
         setTimeout(() => setSuccess(''), 3000);
@@ -162,7 +159,7 @@ const SaleReturnForm = () => {
         itemName: matchingMedicines[0].itemName, // Use the original case from backend
         availableBatches: matchingMedicines.map(medicine => ({
           batch: medicine.batch,
-          quantity: medicine.quantity,
+          quantity: medicine.quantity, // Use availableQuantity
           mrp: medicine.mrp,
           purchaseRate: medicine.purchaseRate
         }))
@@ -174,7 +171,7 @@ const SaleReturnForm = () => {
         updatedItems[index] = {
           ...updatedItems[index],
           batch: medicine.batch,
-          availableQuantity: medicine.quantity,
+          availableQuantity: medicine.quantity, // Use availableQuantity
           returnableQuantity: medicine.quantity,
           purchaseRate: medicine.purchaseRate,
           amount: medicine.purchaseRate,
@@ -198,7 +195,7 @@ const SaleReturnForm = () => {
       updatedItems[index] = {
         ...item,
         batch: selectedBatch.batch,
-        availableQuantity: selectedBatch.quantity,
+        availableQuantity: selectedBatch.quantity, // Use availableQuantity
         returnableQuantity: selectedBatch.quantity,
         purchaseRate: selectedBatch.purchaseRate,
         amount: selectedBatch.purchaseRate,
